@@ -1,5 +1,5 @@
 <script>
-  // No props needed for now
+  import CurrentStatus from './lib/CurrentStatus.svelte';
 </script>
 
 <main>
@@ -7,13 +7,7 @@
     <h1>Resource-Efficient Plant Care Dashboard</h1>
   </header>
 
-  <section id="current-status">
-    <h2>Current Plant Status</h2>
-    <!-- Placeholder for current status metrics -->
-    <p>Soil Moisture: --%</p>
-    <p>Temperature: --°C</p>
-    <p>Light Intensity: -- Lux</p>
-  </section>
+  <CurrentStatus />
 
   <section id="manual-input">
     <button>Manual Input</button>
@@ -40,18 +34,6 @@
   header h1 {
     font-size: 2em;
     color: #2c3e50;
-  }
-
-  #current-status {
-    background-color: #ecf0f1;
-    padding: 1em;
-    border-radius: 8px;
-    margin-bottom: 2em;
-  }
-
-  #current-status h2 {
-    margin-top: 0;
-    color: #34495e;
   }
 
   #manual-input {
