@@ -38,6 +38,37 @@ def latest_reading():
     else:
         return jsonify({"message": "No readings found"}), 404
 
+@app.route('/api/readings', methods=['GET'])
+def get_readings():
+    conn = sqlite3.connect('plant_data.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    query = "SELECT * FROM plant_readings"
+    params = []
+
+    if start_date and end_date:
+        query += " WHERE timestamp BETWEEN ? AND ?"
+        params.extend([start_date, end_date])
+    elif start_date:
+        query += " WHERE timestamp >= ?"
+        params.append(start_date)
+    elif end_date:
+        query += " WHERE timestamp <= ?"
+        params.append(end_date)
+
+    query += " ORDER BY timestamp ASC"
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+
+    readings = [{key: row[key] for key in row.keys()} for row in rows]
+    return jsonify(readings)
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
