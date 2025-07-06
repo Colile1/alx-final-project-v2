@@ -171,7 +171,7 @@ This section provides a granular, actionable task breakdown for each day, direct
 | Day 8 | **Svelte App Initialization & Layout** | Svelte app running, basic dashboard layout visible in browser. | Web browser. |
 |  | 1\. **Start Svelte Dev Server:** Navigate to frontend/my-plant-app/ and run the Svelte development server. | Svelte app accessible. | cd frontend/my-plant-app && npm run dev 14 |
 |  | 2\. **Basic App.svelte Layout:** Modify src/App.svelte to create a foundational HTML structure for the dashboard (e.g., header, main content area, sections for current status, input, charts). | Dashboard skeleton. | \<h1\>Plant Care Dashboard\</h1\> \<main\>...\</main\> 15 |
-|  | 3\. **Global Styles (Optional):** Add basic CSS to src/App.svelte or a global CSS file for overall styling. | Initial visual theme. | \<style\> /\* global styles \*/ \</style\> 14 |
+|  | 3\. **Global Styles :** Add basic CSS to src/App.svelte or a global CSS file for overall styling. | Initial visual theme. | \<style\> /\* global styles \*/ \</style\> 14 |
 | Day 9 | **Display Real-time Data** | Dashboard displays real-time simulated data. | Web browser. |
 |  | 1\. **Create CurrentStatus.svelte Component:** Create a new Svelte component for displaying the latest plant metrics. | Component for current data. | touch src/lib/CurrentStatus.svelte |
 |  | 2\. **Fetch Latest Data:** In CurrentStatus.svelte, use onMount and fetch to make a GET request to your Flask /api/latest\_reading endpoint. | Data fetched on component load. | import { onMount } from 'svelte'; onMount(() \=\> { fetch('/api/latest\_reading').then(res \=\> res.json()).then(data \=\> /\* update state \*/); }); 16 |
