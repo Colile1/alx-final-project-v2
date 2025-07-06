@@ -1,0 +1,24 @@
+Plan for Day 12 Tasks - Resource-Efficient Plant Care Dashboard
+
+1. Modify App.svelte:
+   - Add a time range selection UI (dropdown) above the ChartComponent.
+   - Manage selected time range as a reactive variable.
+   - Pass selected time range as a prop to ChartComponent.
+
+2. Modify ChartComponent.svelte:
+   - Accept a prop for time range.
+   - On mount and whenever time range changes, fetch historical data from Flask backend /api/readings endpoint with time range as query parameter.
+   - Parse the fetched data and update the Chart.js dataset dynamically.
+   - Handle empty or error responses gracefully.
+   - Destroy and recreate the chart on data update to reflect changes.
+
+3. CSS Styling:
+   - Improve styling of the time range selector in App.svelte.
+   - Refine chart canvas styling for responsiveness and visual appeal.
+   - Adjust overall layout and typography in App.svelte for polish.
+
+4. Testing:
+   - Verify that selecting different time ranges updates the chart accordingly.
+   - Ensure no console errors and smooth UI experience.
+
+This plan covers all day 12 tasks: dynamic charting with real data, time range selection, and UI/UX refinements.
