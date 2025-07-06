@@ -1,5 +1,7 @@
 <script>
   import CurrentStatus from './lib/CurrentStatus.svelte';
+  import InputForm from './lib/InputForm.svelte';
+  import ChartComponent from './lib/ChartComponent.svelte';
 </script>
 
 <main>
@@ -10,7 +12,11 @@
   <CurrentStatus />
 
   <section id="manual-input">
-    <button>Manual Input</button>
+    <InputForm />
+  </section>
+
+  <section id="historical-data">
+    <ChartComponent />
   </section>
 
   <footer>
