@@ -74,16 +74,34 @@ def get_readings():
 import random
 import datetime
 
+import math
+import time
+
+# Global variable to keep track of moisture level for simulation
+current_moisture = 70.0  # starting moisture level
+
 def generate_simulated_reading():
-    moisture = round(random.uniform(30, 90), 2)
-    temperature = round(random.uniform(18, 28), 2)
-    light = round(random.uniform(200, 1000), 2)
+    global current_moisture
+    # Decrease moisture gradually
+    current_moisture -= 0.5
+    if current_moisture < 40:
+        # Simulate watering event
+        current_moisture = 90.0
+
+    # Temperature follows a sinusoidal pattern to mimic daily cycle
+    seconds_in_day = 86400
+    current_time = time.time() % seconds_in_day
+    temperature = 22 + 5 * math.sin(2 * math.pi * current_time / seconds_in_day)
+
+    # Light intensity follows a sinusoidal pattern with peak during midday
+    light = 600 + 400 * math.sin(2 * math.pi * current_time / seconds_in_day)
+
     timestamp = datetime.datetime.now().isoformat()
     return {
         'timestamp': timestamp,
-        'moisture_level': moisture,
-        'temperature': temperature,
-        'light_intensity': light,
+        'moisture_level': round(current_moisture, 2),
+        'temperature': round(temperature, 2),
+        'light_intensity': round(light, 2),
         'notes': 'Simulated data',
         'plant_id': 1
     }
