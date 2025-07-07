@@ -1,13 +1,30 @@
 <script>
   import { onMount } from 'svelte';
+  import { writable } from 'svelte/store';
   import CurrentStatus from './lib/CurrentStatus.svelte';
   import InputForm from './lib/InputForm.svelte';
   import ChartComponent from './lib/ChartComponent.svelte';
+
+  export const refreshData = writable(0);
 
   let timeRange = '7days';
 
   function handleTimeRangeChange(event) {
     timeRange = event.target.value;
+  }
+
+  async function simulateData() {
+    try {
+      const response = await fetch('/simulate_data');
+      if (response.ok) {
+        alert('Simulated data generated successfully.');
+        refreshData.update(n => n + 1);
+      } else {
+        alert('Failed to generate simulated data.');
+      }
+    } catch (error) {
+      alert('Error generating simulated data: ' + error.message);
+    }
   }
 </script>
 
@@ -16,7 +33,9 @@
     <h1>Resource-Efficient Plant Care Dashboard</h1>
   </header>
 
-  <CurrentStatus />
+  <button on:click={simulateData} style="margin-bottom: 1em;">Simulate Data</button>
+
+  <CurrentStatus {refreshData} />
 
   <section id="manual-input">
     <InputForm />
@@ -30,7 +49,7 @@
       <option value="30days">Last 30 Days</option>
       <option value="all">All Data</option>
     </select>
-    <ChartComponent {timeRange} />
+    <ChartComponent {timeRange} {refreshData} />
   </section>
 
   <footer>

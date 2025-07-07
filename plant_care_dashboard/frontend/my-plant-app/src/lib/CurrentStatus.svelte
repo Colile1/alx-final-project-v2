@@ -1,5 +1,7 @@
 <script>
   import { onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
+  import { refreshData } from '../App.svelte';
 
   let moisture = '--';
   let temperature = '--';
@@ -47,7 +49,7 @@
     }
   }
 
-  onMount(async () => {
+  async function fetchLatestReading() {
     try {
       const response = await fetch('/api/latest_reading');
       if (response.ok) {
@@ -63,6 +65,19 @@
     } catch (error) {
       console.error('Error fetching latest reading:', error);
     }
+  }
+
+  let unsubscribe;
+
+  onMount(() => {
+    fetchLatestReading();
+    unsubscribe = refreshData.subscribe(() => {
+      fetchLatestReading();
+    });
+  });
+
+  onDestroy(() => {
+    if (unsubscribe) unsubscribe();
   });
 </script>
 

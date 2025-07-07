@@ -3,6 +3,7 @@
   import { afterUpdate } from 'svelte';
   import Chart from 'chart.js/auto';
   import { writable } from 'svelte/store';
+  import { refreshData } from '../App.svelte';
 
   export let timeRange = '7days';
 
@@ -68,6 +69,10 @@
           }
         }
       });
+    });
+
+    unsubscribe = refreshData.subscribe(() => {
+      fetchData(timeRange);
     });
   });
 
