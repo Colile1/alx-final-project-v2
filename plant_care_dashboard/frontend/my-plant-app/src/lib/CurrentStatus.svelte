@@ -67,12 +67,32 @@
     }
   }
 
+  let nextWateringEstimate = '--';
+
+  async function fetchNextWatering() {
+    try {
+      const response = await fetch('/api/next_watering');
+      if (response.ok) {
+        const data = await response.json();
+        nextWateringEstimate = new Date(data.next_watering_estimate).toLocaleString();
+      } else {
+        nextWateringEstimate = 'Unavailable';
+        console.error('Failed to fetch next watering estimate:', response.status);
+      }
+    } catch (error) {
+      nextWateringEstimate = 'Error';
+      console.error('Error fetching next watering estimate:', error);
+    }
+  }
+
   let unsubscribe;
 
   onMount(() => {
     fetchLatestReading();
+    fetchNextWatering();
     unsubscribe = refreshData.subscribe(() => {
       fetchLatestReading();
+      fetchNextWatering();
     });
   });
 
@@ -96,6 +116,7 @@
     Light Intensity: {lightIntensity} Lux
   </p>
   <p>Last Updated: {lastUpdated}</p>
+  <p>Next Watering Estimate: {nextWateringEstimate}</p>
 </section>
 
 <style>
