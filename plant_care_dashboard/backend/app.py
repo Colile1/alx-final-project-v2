@@ -119,6 +119,53 @@ def simulate_data():
     conn.close()
     return jsonify(reading)
 
+from datetime import datetime, timedelta
+
+DRY_THRESHOLD = 40.0
+
+@app.route('/api/next_watering', methods=['GET'])
+def next_watering():
+    conn = sqlite3.connect('plant_data.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # Fetch last 10 moisture readings ordered by timestamp descending
+    cursor.execute("""
+        SELECT timestamp, moisture_level FROM plant_readings
+        WHERE moisture_level IS NOT NULL
+        ORDER BY timestamp DESC
+        LIMIT 10
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    if len(rows) < 2:
+        return jsonify({"message": "Not enough data for prediction"}), 400
+
+    # Convert timestamps to datetime objects and moisture levels to floats
+    data = [(datetime.fromisoformat(row['timestamp']), row['moisture_level']) for row in rows]
+    data.sort(key=lambda x: x[0])  # sort ascending by time
+
+    # Calculate average rate of moisture decrease per second
+    total_drop = data[0][1] - data[-1][1]
+    total_seconds = (data[-1][0] - data[0][0]).total_seconds()
+    if total_seconds <= 0 or total_drop <= 0:
+        return jsonify({"message": "Invalid data for prediction"}), 400
+
+    rate_of_drop_per_sec = total_drop / total_seconds
+
+    # Estimate time until moisture reaches dry threshold
+    current_moisture = data[-1][1]
+    if current_moisture <= DRY_THRESHOLD:
+        next_watering_time = datetime.now()
+    else:
+        seconds_until_dry = (current_moisture - DRY_THRESHOLD) / rate_of_drop_per_sec
+        next_watering_time = datetime.now() + timedelta(seconds=seconds_until_dry)
+
+    return jsonify({
+        "next_watering_estimate": next_watering_time.isoformat()
+    })
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
