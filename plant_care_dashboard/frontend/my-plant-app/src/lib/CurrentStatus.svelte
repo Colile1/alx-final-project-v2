@@ -7,6 +7,7 @@
   let temperature = '--';
   let lightIntensity = '--';
   let lastUpdated = '--';
+  let dataSource = 'unknown';
 
   // Define thresholds
   const DRY_THRESHOLD = 40;
@@ -58,6 +59,7 @@
         temperature = data.temperature ?? '--';
         lightIntensity = data.light_intensity ?? '--';
         lastUpdated = data.timestamp ?? '--';
+        dataSource = data.source ?? 'unknown';
         updateStatuses();
       } else {
         console.error('Failed to fetch latest reading:', response.status);
@@ -116,6 +118,7 @@
     Light Intensity: {lightIntensity} Lux
   </p>
   <p>Last Updated: {lastUpdated}</p>
+  <p>Data Source: {dataSource}</p>
   <p>Next Watering Estimate: {nextWateringEstimate}</p>
 </section>
 

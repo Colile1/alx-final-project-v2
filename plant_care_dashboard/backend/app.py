@@ -1,40 +1,98 @@
 import sqlite3
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS
-from flask_basicauth import BasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-CORS(app)
-
-# Configure Basic Auth
-app.config['BASIC_AUTH_USERNAME'] = 'admin'
-app.config['BASIC_AUTH_PASSWORD'] = 'password'
-basic_auth = BasicAuth(app)
+app.secret_key = 'your_secret_key_here'  # Replace with a secure key
+CORS(app, supports_credentials=True)
 
 def init_db():
     conn = sqlite3.connect('plant_data.db')
     cursor = conn.cursor()
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL
+        )
+    ''')
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS plant_readings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             timestamp TEXT,
             moisture_level REAL,
             temperature REAL,
             light_intensity REAL,
             notes TEXT,
-            plant_id INTEGER
+            plant_id INTEGER,
+            source TEXT DEFAULT 'manual',
+            FOREIGN KEY(user_id) REFERENCES users(id)
         )
     ''')
     conn.commit()
     conn.close()
 
-@app.route('/')
-@basic_auth.required
-def hello():
-    return "Hello, World!"
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'message': 'Username and password required'}), 400
+
+    password_hash = generate_password_hash(password)
+
+    conn = sqlite3.connect('plant_data.db')
+    cursor = conn.cursor()
+    try:
+        cursor.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', (username, password_hash))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({'message': 'Username already exists'}), 400
+    conn.close()
+    return jsonify({'message': 'User registered successfully'}), 201
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'message': 'Username and password required'}), 400
+
+    conn = sqlite3.connect('plant_data.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, password_hash FROM users WHERE username = ?', (username,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user and check_password_hash(user[1], password):
+        session['user_id'] = user[0]
+        return jsonify({'message': 'Login successful'}), 200
+    else:
+        return jsonify({'message': 'Invalid username or password'}), 401
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.pop('user_id', None)
+    return jsonify({'message': 'Logged out successfully'}), 200
+
+def login_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'message': 'Authentication required'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/api/latest_reading', methods=['GET'])
-@basic_auth.required
+@login_required
 def latest_reading():
     conn = sqlite3.connect('plant_data.db')
     conn.row_factory = sqlite3.Row
@@ -49,7 +107,7 @@ def latest_reading():
         return jsonify({"message": "No readings found"}), 404
 
 @app.route('/api/readings', methods=['GET'])
-@basic_auth.required
+@login_required
 def get_readings():
     conn = sqlite3.connect('plant_data.db')
     conn.row_factory = sqlite3.Row
@@ -116,15 +174,15 @@ def generate_simulated_reading():
     }
 
 @app.route('/simulate_data', methods=['GET'])
-@basic_auth.required
+@login_required
 def simulate_data():
     reading = generate_simulated_reading()
     conn = sqlite3.connect('plant_data.db')
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO plant_readings (timestamp, moisture_level, temperature, light_intensity, notes, plant_id)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (reading['timestamp'], reading['moisture_level'], reading['temperature'], reading['light_intensity'], reading['notes'], reading['plant_id']))
+        INSERT INTO plant_readings (timestamp, moisture_level, temperature, light_intensity, notes, plant_id, user_id, source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (reading['timestamp'], reading['moisture_level'], reading['temperature'], reading['light_intensity'], reading['notes'], reading['plant_id'], session['user_id'], 'simulated'))
     conn.commit()
     conn.close()
     return jsonify(reading)
@@ -134,7 +192,7 @@ from datetime import datetime, timedelta
 DRY_THRESHOLD = 40.0
 
 @app.route('/api/next_watering', methods=['GET'])
-@basic_auth.required
+@login_required
 def next_watering():
     conn = sqlite3.connect('plant_data.db')
     conn.row_factory = sqlite3.Row
@@ -176,6 +234,30 @@ def next_watering():
     return jsonify({
         "next_watering_estimate": next_watering_time.isoformat()
     })
+
+@app.route('/api/sensor_data', methods=['POST'])
+@login_required
+def sensor_data():
+    data = request.get_json()
+    timestamp = data.get('timestamp')
+    moisture_level = data.get('moisture_level')
+    temperature = data.get('temperature')
+    light_intensity = data.get('light_intensity')
+    notes = data.get('notes', 'Sensor data')
+    plant_id = data.get('plant_id', 1)
+
+    if not timestamp or moisture_level is None or temperature is None or light_intensity is None:
+        return jsonify({'message': 'Missing required sensor data fields'}), 400
+
+    conn = sqlite3.connect('plant_data.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO plant_readings (timestamp, moisture_level, temperature, light_intensity, notes, plant_id, user_id, source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (timestamp, moisture_level, temperature, light_intensity, notes, plant_id, session['user_id'], 'sensor'))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Sensor data added successfully'}), 201
 
 if __name__ == '__main__':
     init_db()
