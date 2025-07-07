@@ -1,7 +1,9 @@
 import sqlite3
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 def init_db():
     conn = sqlite3.connect('plant_data.db')
@@ -68,6 +70,36 @@ def get_readings():
 
     readings = [{key: row[key] for key in row.keys()} for row in rows]
     return jsonify(readings)
+
+import random
+import datetime
+
+def generate_simulated_reading():
+    moisture = round(random.uniform(30, 90), 2)
+    temperature = round(random.uniform(18, 28), 2)
+    light = round(random.uniform(200, 1000), 2)
+    timestamp = datetime.datetime.now().isoformat()
+    return {
+        'timestamp': timestamp,
+        'moisture_level': moisture,
+        'temperature': temperature,
+        'light_intensity': light,
+        'notes': 'Simulated data',
+        'plant_id': 1
+    }
+
+@app.route('/simulate_data', methods=['GET'])
+def simulate_data():
+    reading = generate_simulated_reading()
+    conn = sqlite3.connect('plant_data.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO plant_readings (timestamp, moisture_level, temperature, light_intensity, notes, plant_id)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (reading['timestamp'], reading['moisture_level'], reading['temperature'], reading['light_intensity'], reading['notes'], reading['plant_id']))
+    conn.commit()
+    conn.close()
+    return jsonify(reading)
 
 if __name__ == '__main__':
     init_db()

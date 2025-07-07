@@ -6,6 +6,47 @@
   let lightIntensity = '--';
   let lastUpdated = '--';
 
+  // Define thresholds
+  const DRY_THRESHOLD = 40;
+  const WET_THRESHOLD = 85;
+  const TEMP_HIGH_THRESHOLD = 30;
+  const TEMP_LOW_THRESHOLD = 15;
+  const LIGHT_LOW_THRESHOLD = 500;
+
+  let moistureStatus = '';
+  let temperatureStatus = '';
+  let lightStatus = '';
+
+  function updateStatuses() {
+    if (moisture === '--') {
+      moistureStatus = '';
+    } else if (moisture < DRY_THRESHOLD) {
+      moistureStatus = 'dry';
+    } else if (moisture > WET_THRESHOLD) {
+      moistureStatus = 'wet';
+    } else {
+      moistureStatus = 'moderate';
+    }
+
+    if (temperature === '--') {
+      temperatureStatus = '';
+    } else if (temperature > TEMP_HIGH_THRESHOLD) {
+      temperatureStatus = 'high';
+    } else if (temperature < TEMP_LOW_THRESHOLD) {
+      temperatureStatus = 'low';
+    } else {
+      temperatureStatus = 'optimal';
+    }
+
+    if (lightIntensity === '--') {
+      lightStatus = '';
+    } else if (lightIntensity < LIGHT_LOW_THRESHOLD) {
+      lightStatus = 'low';
+    } else {
+      lightStatus = 'good';
+    }
+  }
+
   onMount(async () => {
     try {
       const response = await fetch('/api/latest_reading');
@@ -15,6 +56,7 @@
         temperature = data.temperature ?? '--';
         lightIntensity = data.light_intensity ?? '--';
         lastUpdated = data.timestamp ?? '--';
+        updateStatuses();
       } else {
         console.error('Failed to fetch latest reading:', response.status);
       }
@@ -26,9 +68,18 @@
 
 <section id="current-status">
   <h2>Current Plant Status</h2>
-  <p>Soil Moisture: {moisture}%</p>
-  <p>Temperature: {temperature}°C</p>
-  <p>Light Intensity: {lightIntensity} Lux</p>
+  <p class:dry={moistureStatus === 'dry'} class:moderate={moistureStatus === 'moderate'} class:wet={moistureStatus === 'wet'}>
+    Soil Moisture: {moisture}%
+    {#if moistureStatus === 'dry'}
+      - Plant needs water!
+    {/if}
+  </p>
+  <p class:high={temperatureStatus === 'high'} class:low={temperatureStatus === 'low'} class:optimal={temperatureStatus === 'optimal'}>
+    Temperature: {temperature}°C
+  </p>
+  <p class:low={lightStatus === 'low'} class:good={lightStatus === 'good'}>
+    Light Intensity: {lightIntensity} Lux
+  </p>
   <p>Last Updated: {lastUpdated}</p>
 </section>
 
@@ -43,5 +94,42 @@
   #current-status h2 {
     margin-top: 0;
     color: #34495e;
+  }
+
+  /* Moisture status styles */
+  p.dry {
+    color: red;
+    font-weight: bold;
+  }
+
+  p.moderate {
+    color: orange;
+  }
+
+  p.wet {
+    color: green;
+  }
+
+  /* Temperature status styles */
+  p.high {
+    color: red;
+    font-weight: bold;
+  }
+
+  p.low {
+    color: blue;
+  }
+
+  p.optimal {
+    color: green;
+  }
+
+  /* Light intensity status styles */
+  p.low {
+    color: orange;
+  }
+
+  p.good {
+    color: green;
   }
 </style>

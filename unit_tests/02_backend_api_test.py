@@ -1,5 +1,8 @@
 import unittest
-from plant_care_dashboard.backend.app import app
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'plant_care_dashboard')))
+
 
 class BackendAPITestCase(unittest.TestCase):
     def setUp(self):
