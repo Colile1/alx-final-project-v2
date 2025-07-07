@@ -1,9 +1,15 @@
 import sqlite3
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_basicauth import BasicAuth
 
 app = Flask(__name__)
 CORS(app)
+
+# Configure Basic Auth
+app.config['BASIC_AUTH_USERNAME'] = 'admin'
+app.config['BASIC_AUTH_PASSWORD'] = 'password'
+basic_auth = BasicAuth(app)
 
 def init_db():
     conn = sqlite3.connect('plant_data.db')
@@ -23,10 +29,12 @@ def init_db():
     conn.close()
 
 @app.route('/')
+@basic_auth.required
 def hello():
     return "Hello, World!"
 
 @app.route('/api/latest_reading', methods=['GET'])
+@basic_auth.required
 def latest_reading():
     conn = sqlite3.connect('plant_data.db')
     conn.row_factory = sqlite3.Row
@@ -41,6 +49,7 @@ def latest_reading():
         return jsonify({"message": "No readings found"}), 404
 
 @app.route('/api/readings', methods=['GET'])
+@basic_auth.required
 def get_readings():
     conn = sqlite3.connect('plant_data.db')
     conn.row_factory = sqlite3.Row
@@ -107,6 +116,7 @@ def generate_simulated_reading():
     }
 
 @app.route('/simulate_data', methods=['GET'])
+@basic_auth.required
 def simulate_data():
     reading = generate_simulated_reading()
     conn = sqlite3.connect('plant_data.db')
@@ -124,6 +134,7 @@ from datetime import datetime, timedelta
 DRY_THRESHOLD = 40.0
 
 @app.route('/api/next_watering', methods=['GET'])
+@basic_auth.required
 def next_watering():
     conn = sqlite3.connect('plant_data.db')
     conn.row_factory = sqlite3.Row
